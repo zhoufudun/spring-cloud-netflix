@@ -27,7 +27,7 @@ import com.netflix.servo.monitor.Stopwatch;
  */
 public class RibbonStatsRecorder {
 
-	private RibbonLoadBalancerContext context;
+	private RibbonLoadBalancerContext context; //
 
 	private ServerStats serverStats;
 

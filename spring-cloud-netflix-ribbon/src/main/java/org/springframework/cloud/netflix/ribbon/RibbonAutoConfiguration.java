@@ -60,10 +60,10 @@ import org.springframework.web.client.RestTemplate;
 @Conditional(RibbonAutoConfiguration.RibbonClassesConditions.class)
 @RibbonClients
 @AutoConfigureAfter(name = "org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration")
-@AutoConfigureBefore({ LoadBalancerAutoConfiguration.class,
-		AsyncLoadBalancerAutoConfiguration.class })
-@EnableConfigurationProperties({ RibbonEagerLoadProperties.class,
-		ServerIntrospectorProperties.class })
+@AutoConfigureBefore({LoadBalancerAutoConfiguration.class,
+		AsyncLoadBalancerAutoConfiguration.class})
+@EnableConfigurationProperties({RibbonEagerLoadProperties.class,
+		ServerIntrospectorProperties.class})
 public class RibbonAutoConfiguration {
 
 	@Autowired(required = false)
@@ -135,7 +135,7 @@ public class RibbonAutoConfiguration {
 
 	// TODO: support for autoconfiguring restemplate to use apache http client or okhttp
 
-	@Target({ ElementType.TYPE, ElementType.METHOD })
+	@Target({ElementType.TYPE, ElementType.METHOD})
 	@Retention(RetentionPolicy.RUNTIME)
 	@Documented
 	@Conditional(OnRibbonRestClientCondition.class)
