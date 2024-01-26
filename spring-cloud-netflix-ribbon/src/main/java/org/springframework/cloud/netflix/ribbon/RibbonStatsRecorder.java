@@ -28,7 +28,14 @@ import com.netflix.servo.monitor.Stopwatch;
 public class RibbonStatsRecorder {
 
 	private RibbonLoadBalancerContext context; //
-
+	/**
+	 * [
+	 * Server:10.2.40.18:8207;	Zone:UNKNOWN;	Total Requests:0;	Successive connection failure:0;
+	 * Total blackout seconds:0;	Last connection made:Thu Jan 01 08:00:00 CST 1970;	First connection made: Thu Jan 01 08:00:00 CST 1970;
+	 * Active Connections:0;	total failure count in last (1000) msecs:0;	average resp time:0.0;	90 percentile resp time:0.0;
+	 * 95 percentile resp time:0.0;	min resp time:0.0;	max resp time:0.0;	stddev resp time:0.0
+	 * ]
+	 */
 	private ServerStats serverStats;
 
 	private Stopwatch tracer;

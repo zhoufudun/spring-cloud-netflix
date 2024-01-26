@@ -48,17 +48,36 @@ public class RibbonLoadBalancerClient implements LoadBalancerClient {
 		this.clientFactory = clientFactory;
 	}
 
+	/**
+	 * 对于使用ribbon的情况
+	 *
+	 * @param instance RibbonServer{serviceId='nacos-user-service', server=10.2.40.18:8207, secure=false, metadata={preserved.register.source=SPRING_CLOUD}}
+	 * @param original http://nacos-user-service/user/create
+	 * @return
+	 */
 	@Override
 	public URI reconstructURI(ServiceInstance instance, URI original) {
 		Assert.notNull(instance, "instance can not be null");
-		String serviceId = instance.getServiceId();
-		RibbonLoadBalancerContext context = this.clientFactory
-				.getLoadBalancerContext(serviceId);
+		String serviceId = instance.getServiceId(); // nacos-user-service
+		/**
+		 * org.springframework.cloud.netflix.ribbon.RibbonLoadBalancerContext:
+		 * 1、clientName=nacos-user-service
+		 * 2、vipAddresses=nacos-user-service
+		 * 3、maxAutoRetriesNextServer=1
+		 * 4、lb=ZoneAwareLoadBalancer=DynamicServerListLoadBalancer:{NFLoadBalancer:name=nacos-user-service,current list of Servers=[10.2.40.18:8207, 10.2.40.18:8206],Load balancer stats=Zone stats: {unknown=[Zone:unknown;	Instance count:2;	Active connections count: 0;	Circuit breaker tripped count: 0;	Active connections per server: 0.0;]
+		 * },Server stats: [[Server:10.2.40.18:8207;	Zone:UNKNOWN;	Total Requests:0;	Successive connection failure:0;	Total blackout seconds:0;	Last connection made:Fri Jan 26 16:54:54 CST 2024;	First connection made: Fri Jan 26 16:54:54 CST 2024;	Active Connections:0;	total failure count in last (1000) msecs:0;	average resp time:0.0;	90 percentile resp time:0.0;	95 percentile resp time:0.0;	min resp time:0.0;	max resp time:0.0;	stddev resp time:0.0]
+		 * , [Server:10.2.40.18:8206;	Zone:UNKNOWN;	Total Requests:0;	Successive connection failure:0;	Total blackout seconds:0;	Last connection made:Thu Jan 01 08:00:00 CST 1970;	First connection made: Thu Jan 01 08:00:00 CST 1970;	Active Connections:0;	total failure count in last (1000) msecs:0;	average resp time:0.0;	90 percentile resp time:0.0;	95 percentile resp time:0.0;	min resp time:0.0;	max resp time:0.0;	stddev resp time:0.0]
+		 * ]}ServerList:com.alibaba.cloud.nacos.ribbon.NacosServerList@21227ed1
+		 * 5、maxAutoRetries=0
+		 * 6、okToRetryOnAllOperations=false
+		 */
+		RibbonLoadBalancerContext context = this.clientFactory.getLoadBalancerContext(serviceId);
 
 		URI uri;
 		Server server;
 		if (instance instanceof RibbonServer) {
 			RibbonServer ribbonServer = (RibbonServer) instance;
+			// NacosServer=10.2.40.18:8207
 			server = ribbonServer.getServer();
 			uri = updateToSecureConnectionIfNeeded(original, ribbonServer);
 		} else {
@@ -128,10 +147,9 @@ public class RibbonLoadBalancerClient implements LoadBalancerClient {
 	}
 
 	/**
-	 *
-	 * @param serviceId nacos-user-service
+	 * @param serviceId       nacos-user-service
 	 * @param serviceInstance RibbonServer{serviceId='nacos-user-service', server=10.2.40.18:8206, secure=false, metadata={preserved.register.source=SPRING_CLOUD}}
-	 * @param request org.springframework.cloud.client.loadbalancer.LoadBalancerRequestFactory$$Lambda$578/829204661@7c0dc36d
+	 * @param request         org.springframework.cloud.client.loadbalancer.LoadBalancerRequestFactory$$Lambda$578/829204661@7c0dc36d
 	 */
 	@Override
 	public <T> T execute(String serviceId, ServiceInstance serviceInstance,
@@ -143,8 +161,12 @@ public class RibbonLoadBalancerClient implements LoadBalancerClient {
 		if (server == null) {
 			throw new IllegalStateException("No instances available for " + serviceId);
 		}
-
+		// org.springframework.cloud.netflix.ribbon.RibbonLoadBalancerContext
 		RibbonLoadBalancerContext context = this.clientFactory.getLoadBalancerContext(serviceId);
+		/**
+		 * ServerStats=[Server:10.2.40.18:8207;	Zone:UNKNOWN;	Total Requests:0;	Successive connection failure:0;	Total blackout seconds:0;	Last connection made:Fri Jan 26 16:54:54 CST 2024;	First connection made: Fri Jan 26 16:54:54 CST 2024;	Active Connections:1;	total failure count in last (1000) msecs:0;	average resp time:0.0;	90 percentile resp time:0.0;	95 percentile resp time:0.0;	min resp time:0.0;	max resp time:0.0;	stddev resp time:0.0]
+		 * context=RibbonLoadBalancerContext
+		 */
 		RibbonStatsRecorder statsRecorder = new RibbonStatsRecorder(context, server);
 
 		try {

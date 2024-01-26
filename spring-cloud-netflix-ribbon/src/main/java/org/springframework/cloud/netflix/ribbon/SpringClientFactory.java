@@ -116,6 +116,13 @@ public class SpringClientFactory extends NamedContextFactory<RibbonClientSpecifi
 		return result;
 	}
 
+	/**
+	 *
+	 * @param name name
+	 * @param type class org.springframework.cloud.netflix.ribbon.RibbonLoadBalancerContext
+	 * @return
+	 * @param <C>
+	 */
 	@Override
 	public <C> C getInstance(String name, Class<C> type) {
 		C instance = super.getInstance(name, type);
