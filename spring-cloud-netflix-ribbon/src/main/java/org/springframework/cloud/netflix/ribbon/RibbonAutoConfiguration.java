@@ -61,136 +61,141 @@ import org.springframework.web.client.RestTemplate;
 @RibbonClients
 @AutoConfigureAfter(name = "org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration")
 @AutoConfigureBefore({LoadBalancerAutoConfiguration.class,
-		AsyncLoadBalancerAutoConfiguration.class})
+        AsyncLoadBalancerAutoConfiguration.class})
 @EnableConfigurationProperties({RibbonEagerLoadProperties.class,
-		ServerIntrospectorProperties.class})
+        ServerIntrospectorProperties.class})
 public class RibbonAutoConfiguration {
+    /**
+     * [
+     * 		RibbonClientSpecification{name='default.org.springframework.cloud.netflix.ribbon.RibbonAutoConfiguration', configuration=[]},
+     * 		RibbonClientSpecification{name='default.com.alibaba.cloud.nacos.ribbon.RibbonNacosAutoConfiguration', configuration=[class com.alibaba.cloud.nacos.ribbon.NacosRibbonClientConfiguration]}
+     * ]
+     */
+    @Autowired(required = false)
+    private List<RibbonClientSpecification> configurations = new ArrayList<>();
 
-	@Autowired(required = false)
-	private List<RibbonClientSpecification> configurations = new ArrayList<>();
+    @Autowired
+    private RibbonEagerLoadProperties ribbonEagerLoadProperties;
 
-	@Autowired
-	private RibbonEagerLoadProperties ribbonEagerLoadProperties;
+    @Bean
+    public HasFeatures ribbonFeature() {
+        return HasFeatures.namedFeature("Ribbon", Ribbon.class);
+    }
 
-	@Bean
-	public HasFeatures ribbonFeature() {
-		return HasFeatures.namedFeature("Ribbon", Ribbon.class);
-	}
+    @Bean
+    public SpringClientFactory springClientFactory() {
+        SpringClientFactory factory = new SpringClientFactory();
+        factory.setConfigurations(this.configurations);
+        return factory;
+    }
 
-	@Bean
-	public SpringClientFactory springClientFactory() {
-		SpringClientFactory factory = new SpringClientFactory();
-		factory.setConfigurations(this.configurations);
-		return factory;
-	}
+    @Bean
+    @ConditionalOnMissingBean(LoadBalancerClient.class)
+    public LoadBalancerClient loadBalancerClient() {
+        return new RibbonLoadBalancerClient(springClientFactory());
+    }
 
-	@Bean
-	@ConditionalOnMissingBean(LoadBalancerClient.class)
-	public LoadBalancerClient loadBalancerClient() {
-		return new RibbonLoadBalancerClient(springClientFactory());
-	}
+    @Bean
+    @ConditionalOnClass(name = "org.springframework.retry.support.RetryTemplate")
+    @ConditionalOnMissingBean
+    public LoadBalancedRetryFactory loadBalancedRetryPolicyFactory(
+            final SpringClientFactory clientFactory) {
+        return new RibbonLoadBalancedRetryFactory(clientFactory);
+    }
 
-	@Bean
-	@ConditionalOnClass(name = "org.springframework.retry.support.RetryTemplate")
-	@ConditionalOnMissingBean
-	public LoadBalancedRetryFactory loadBalancedRetryPolicyFactory(
-			final SpringClientFactory clientFactory) {
-		return new RibbonLoadBalancedRetryFactory(clientFactory);
-	}
+    @Bean
+    @ConditionalOnMissingBean
+    public PropertiesFactory propertiesFactory() {
+        return new PropertiesFactory();
+    }
 
-	@Bean
-	@ConditionalOnMissingBean
-	public PropertiesFactory propertiesFactory() {
-		return new PropertiesFactory();
-	}
+    @Bean
+    @ConditionalOnProperty("ribbon.eager-load.enabled")
+    public RibbonApplicationContextInitializer ribbonApplicationContextInitializer() {
+        return new RibbonApplicationContextInitializer(springClientFactory(),
+                ribbonEagerLoadProperties.getClients());
+    }
 
-	@Bean
-	@ConditionalOnProperty("ribbon.eager-load.enabled")
-	public RibbonApplicationContextInitializer ribbonApplicationContextInitializer() {
-		return new RibbonApplicationContextInitializer(springClientFactory(),
-				ribbonEagerLoadProperties.getClients());
-	}
+    @Configuration
+    @ConditionalOnClass(HttpRequest.class)
+    @ConditionalOnRibbonRestClient
+    protected static class RibbonClientHttpRequestFactoryConfiguration {
 
-	@Configuration
-	@ConditionalOnClass(HttpRequest.class)
-	@ConditionalOnRibbonRestClient
-	protected static class RibbonClientHttpRequestFactoryConfiguration {
+        @Autowired
+        private SpringClientFactory springClientFactory;
 
-		@Autowired
-		private SpringClientFactory springClientFactory;
+        @Bean
+        public RestTemplateCustomizer restTemplateCustomizer(
+                final RibbonClientHttpRequestFactory ribbonClientHttpRequestFactory) {
+            return restTemplate -> restTemplate
+                    .setRequestFactory(ribbonClientHttpRequestFactory);
+        }
 
-		@Bean
-		public RestTemplateCustomizer restTemplateCustomizer(
-				final RibbonClientHttpRequestFactory ribbonClientHttpRequestFactory) {
-			return restTemplate -> restTemplate
-					.setRequestFactory(ribbonClientHttpRequestFactory);
-		}
+        @Bean
+        public RibbonClientHttpRequestFactory ribbonClientHttpRequestFactory() {
+            return new RibbonClientHttpRequestFactory(this.springClientFactory);
+        }
 
-		@Bean
-		public RibbonClientHttpRequestFactory ribbonClientHttpRequestFactory() {
-			return new RibbonClientHttpRequestFactory(this.springClientFactory);
-		}
+    }
 
-	}
+    // TODO: support for autoconfiguring restemplate to use apache http client or okhttp
 
-	// TODO: support for autoconfiguring restemplate to use apache http client or okhttp
+    @Target({ElementType.TYPE, ElementType.METHOD})
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    @Conditional(OnRibbonRestClientCondition.class)
+    @interface ConditionalOnRibbonRestClient {
 
-	@Target({ElementType.TYPE, ElementType.METHOD})
-	@Retention(RetentionPolicy.RUNTIME)
-	@Documented
-	@Conditional(OnRibbonRestClientCondition.class)
-	@interface ConditionalOnRibbonRestClient {
+    }
 
-	}
+    private static class OnRibbonRestClientCondition extends AnyNestedCondition {
 
-	private static class OnRibbonRestClientCondition extends AnyNestedCondition {
+        OnRibbonRestClientCondition() {
+            super(ConfigurationPhase.REGISTER_BEAN);
+        }
 
-		OnRibbonRestClientCondition() {
-			super(ConfigurationPhase.REGISTER_BEAN);
-		}
+        @Deprecated // remove in Edgware"
+        @ConditionalOnProperty("ribbon.http.client.enabled")
+        static class ZuulProperty {
 
-		@Deprecated // remove in Edgware"
-		@ConditionalOnProperty("ribbon.http.client.enabled")
-		static class ZuulProperty {
+        }
 
-		}
+        @ConditionalOnProperty("ribbon.restclient.enabled")
+        static class RibbonProperty {
 
-		@ConditionalOnProperty("ribbon.restclient.enabled")
-		static class RibbonProperty {
+        }
 
-		}
+    }
 
-	}
+    /**
+     * {@link AllNestedConditions} that checks that either multiple classes are present.
+     */
+    static class RibbonClassesConditions extends AllNestedConditions {
 
-	/**
-	 * {@link AllNestedConditions} that checks that either multiple classes are present.
-	 */
-	static class RibbonClassesConditions extends AllNestedConditions {
+        RibbonClassesConditions() {
+            super(ConfigurationPhase.PARSE_CONFIGURATION);
+        }
 
-		RibbonClassesConditions() {
-			super(ConfigurationPhase.PARSE_CONFIGURATION);
-		}
+        @ConditionalOnClass(IClient.class)
+        static class IClientPresent {
 
-		@ConditionalOnClass(IClient.class)
-		static class IClientPresent {
+        }
 
-		}
+        @ConditionalOnClass(RestTemplate.class)
+        static class RestTemplatePresent {
 
-		@ConditionalOnClass(RestTemplate.class)
-		static class RestTemplatePresent {
+        }
 
-		}
+        @ConditionalOnClass(AsyncRestTemplate.class)
+        static class AsyncRestTemplatePresent {
 
-		@ConditionalOnClass(AsyncRestTemplate.class)
-		static class AsyncRestTemplatePresent {
+        }
 
-		}
+        @ConditionalOnClass(Ribbon.class)
+        static class RibbonPresent {
 
-		@ConditionalOnClass(Ribbon.class)
-		static class RibbonPresent {
+        }
 
-		}
-
-	}
+    }
 
 }

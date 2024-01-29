@@ -87,7 +87,7 @@ public class RibbonClientConfiguration {
 	public static final boolean DEFAULT_GZIP_PAYLOAD = true;
 
 	@RibbonClientName
-	private String name = "client";
+	private String name = "client"; // nacos-user-service
 
 	// TODO: maybe re-instate autowired load balancers: identified by name they could be
 	// associated with ribbon clients
@@ -98,6 +98,9 @@ public class RibbonClientConfiguration {
 	@Bean
 	@ConditionalOnMissingBean
 	public IClientConfig ribbonClientConfig() {
+		/**
+		 * 初始化RibbonClient的一些默认参数，连接超时时间，读取超时时间等
+		 */
 		DefaultClientConfigImpl config = new DefaultClientConfigImpl();
 		config.loadProperties(this.name);
 		config.set(CommonClientConfigKey.ConnectTimeout, DEFAULT_CONNECT_TIMEOUT);
@@ -108,11 +111,13 @@ public class RibbonClientConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public IRule ribbonRule(IClientConfig config) {
+	public IRule ribbonRule(IClientConfig config) { // config=DefaultClientConfigImpl
 		if (this.propertiesFactory.isSet(IRule.class, name)) {
 			return this.propertiesFactory.get(IRule.class, config, name);
 		}
+		// 区域回避规则
 		ZoneAvoidanceRule rule = new ZoneAvoidanceRule();
+		// 这里会去Nacos拉取服务列表
 		rule.initWithNiwsConfig(config);
 		return rule;
 	}

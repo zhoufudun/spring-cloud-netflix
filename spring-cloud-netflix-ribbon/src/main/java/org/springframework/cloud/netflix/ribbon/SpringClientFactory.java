@@ -32,6 +32,8 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
  * creates a Spring ApplicationContext per client name, and extracts the beans that it
  * needs from there.
  *
+ * 创建客户端、负载平衡器和客户端配置实例的工厂。它为每个客户端名称创建一个SpringApplicationContext，并从中提取所需的bean
+ *
  * @author Spencer Gibb
  * @author Dave Syer
  */

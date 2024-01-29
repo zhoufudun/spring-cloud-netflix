@@ -26,57 +26,62 @@ import org.springframework.cloud.context.named.NamedContextFactory;
  */
 public class RibbonClientSpecification implements NamedContextFactory.Specification {
 
-	private String name;
+    private String name;
 
-	private Class<?>[] configuration;
+    private Class<?>[] configuration;
 
-	public RibbonClientSpecification() {
-	}
+    public RibbonClientSpecification() {
+    }
 
+	/**
+	 *
+	 * @param name   default.com.alibaba.cloud.nacos.ribbon.RibbonNacosAutoConfiguration
+	 * @param configuration Class[1], class com.alibaba.cloud.nacos.ribbon.NacosRibbonClientConfiguration
+	 */
 	public RibbonClientSpecification(String name, Class<?>[] configuration) {
-		this.name = name;
-		this.configuration = configuration;
-	}
+        this.name = name;
+        this.configuration = configuration;
+    }
 
-	public String getName() {
-		return name;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public Class<?>[] getConfiguration() {
-		return configuration;
-	}
+    public Class<?>[] getConfiguration() {
+        return configuration;
+    }
 
-	public void setConfiguration(Class<?>[] configuration) {
-		this.configuration = configuration;
-	}
+    public void setConfiguration(Class<?>[] configuration) {
+        this.configuration = configuration;
+    }
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-		RibbonClientSpecification that = (RibbonClientSpecification) o;
-		return Arrays.equals(configuration, that.configuration)
-				&& Objects.equals(name, that.name);
-	}
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        RibbonClientSpecification that = (RibbonClientSpecification) o;
+        return Arrays.equals(configuration, that.configuration)
+                && Objects.equals(name, that.name);
+    }
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(configuration, name);
-	}
+    @Override
+    public int hashCode() {
+        return Objects.hash(configuration, name);
+    }
 
-	@Override
-	public String toString() {
-		return new StringBuilder("RibbonClientSpecification{").append("name='")
-				.append(name).append("', ").append("configuration=")
-				.append(Arrays.toString(configuration)).append("}").toString();
-	}
+    @Override
+    public String toString() {
+        return new StringBuilder("RibbonClientSpecification{").append("name='")
+                .append(name).append("', ").append("configuration=")
+                .append(Arrays.toString(configuration)).append("}").toString();
+    }
 
 }
